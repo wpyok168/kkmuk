@@ -1,0 +1,18 @@
+name = "c2um"
+main = "_worker.js"
+compatibility_date = "2026-04-02"
+compatibility_flags = ["nodejs_compat"]
+
+# KV 命名空间绑定（必须绑定为 KV_LOGS）
+kv_namespaces = [
+  { binding = "KV", id = "" }
+]
+
+# 环境变量默认值
+[vars]
+ADMIN = ""
+UUID = ""
+
+# 触发器规则
+[triggers]
+crons = []
