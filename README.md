@@ -1,0 +1,2 @@
+变量名称：ADMIN、UUID
+KV名称：KV
