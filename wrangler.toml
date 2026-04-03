@@ -1,9 +1,9 @@
-name = "c2um"
+name = "hhj"
 main = "_worker.js"
 compatibility_date = "2026-04-02"
 compatibility_flags = ["nodejs_compat"]
 
-# KV 命名空间绑定（必须绑定为 KV_LOGS）
+# KV 命名空间绑定（必须绑定为 KV）
 kv_namespaces = [
   { binding = "KV", id = "" }
 ]
