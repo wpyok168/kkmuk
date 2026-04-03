@@ -170,7 +170,7 @@ jobs:
         run: |
           echo "📝 $(date '+%Y-%m-%d %H:%M:%S') - 准备提交更改..."
           echo "$REMOTE_VERSION" > version.txt
-          git add source.js _worker.js version.txt
+          git add _worker.js version.txt
           if git diff --staged --quiet; then
             echo "ℹ️ 无更改，跳过提交"
             exit 0
