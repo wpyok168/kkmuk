@@ -27,9 +27,9 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global pull.rebase false
           
-          # 安装工具
-          echo "📦 安装 terser 与 javascript-obfuscator..."
-          npm install -g terser javascript-obfuscator
+          # 仅安装 terser，移除 javascript-obfuscator
+          echo "📦 安装 terser..."
+          npm install -g terser
 
       - name: 🔍 检查文件状态
         id: check_files
@@ -115,50 +115,31 @@ jobs:
           cp /tmp/remote_worker.js source.js
           echo "✅ source.js 保存成功"
 
-      - name: 🔧 代码混淆与压缩
+      - name: 🔧 代码压缩（无混淆）
         if: env.UPDATE_NEEDED == 'true'
         run: |
-          echo "🔧 $(date '+%Y-%m-%d %H:%M:%S') - 开始代码混淆与压缩..."
+          echo "🔧 $(date '+%Y-%m-%d %H:%M:%S') - 开始代码压缩..."
 
-          # Step 1: terser 预压缩
-          echo "🛠️ 使用 terser 初步压缩..."
-          terser /tmp/remote_worker.js --compress --mangle --output /tmp/min_worker.js
+          # 仅使用 terser 压缩+混淆变量名，移除所有强混淆逻辑
+          terser /tmp/remote_worker.js --compress --mangle --output _worker.js
 
-          # Step 2: javascript-obfuscator 混淆（方案2）
-          echo "🧩 使用 javascript-obfuscator 混淆..."
-          # javascript-obfuscator 混淆（已修正选项名）
-          javascript-obfuscator /tmp/min_worker.js --output _worker.js --compact true \
-            --control-flow-flattening true \
-            --control-flow-flattening-threshold 1 \
-            --dead-code-injection true \
-            --dead-code-injection-threshold 0.4 \
-            --disable-console-output true \
-            --identifier-names-generator hexadecimal \
-            --string-array true \
-            --string-array-encoding rc4 \
-            --string-array-threshold 0.9 \
-            --string-array-rotate true \
-            --string-array-shuffle true \
-            --transform-object-keys true
-
-
-          # Step 3: 检查结果
+          # 检查结果
           if [[ -f "_worker.js" ]]; then
             COMPRESSED_SIZE=$(stat -c%s _worker.js 2>/dev/null || stat -f%z _worker.js 2>/dev/null)
-            echo "📏 混淆后大小: $COMPRESSED_SIZE 字节"
+            echo "📏 压缩后大小: $COMPRESSED_SIZE 字节"
           else
-            echo "❌ 混淆失败，使用原始文件"
+            echo "❌ 压缩失败，使用原始文件"
             cp /tmp/remote_worker.js _worker.js
           fi
 
-          # Step 4: 体积与比例报告
+          # 体积与比例报告
           FINAL_SIZE=$(stat -c%s _worker.js 2>/dev/null || stat -f%z _worker.js 2>/dev/null)
           ORIGINAL_SIZE=$(stat -c%s source.js 2>/dev/null || stat -f%z source.js 2>/dev/null)
           COMPRESSION_RATIO=$(( (FINAL_SIZE * 100) / ORIGINAL_SIZE ))
           
           echo "📊 压缩报告:"
           echo "   • 原始大小: $ORIGINAL_SIZE 字节"
-          echo "   • 混淆后大小: $FINAL_SIZE 字节"
+          echo "   • 压缩后大小: $FINAL_SIZE 字节"
           echo "   • 变化比例: $COMPRESSION_RATIO%"
 
           if [[ $FINAL_SIZE -gt 1048576 ]]; then
@@ -177,15 +158,12 @@ jobs:
           fi
           git commit -m "🔄 Auto Update Worker
 
-          • 同步最新 Worker 文件（混淆版）
+          • 同步最新 Worker 文件（仅压缩）
           • 版本: ${REMOTE_VERSION:0:16}...
           • 更新时间: $(date '+%Y-%m-%d %H:%M:%S')"
           git push
           echo "✅ 提交完成"
 
-# ==============================================
-# 【修复版：发布到 Releases，手动触发 100% 成功】
-# ==============================================
       - name: 📦 打包生成 pages.zip
         run: |
           zip pages.zip _worker.js
@@ -200,7 +178,7 @@ jobs:
           name: Worker 自动发布
           body: |
             ✅ 已同步最新代码
-            ✅ 已混淆 + 压缩
+            ✅ 已压缩（无混淆）
             📦 包含 _worker.js (Pages 专用)
           files: pages.zip
           make_latest: true
@@ -211,7 +189,7 @@ jobs:
         if: env.UPDATE_NEEDED == 'true'
         run: |
           echo "🎉 $(date '+%Y-%m-%d %H:%M:%S') - 自动更新完成！"
-          echo "::notice title=更新完成::已成功同步、压缩并混淆代码"
+          echo "::notice title=更新完成::已成功同步并压缩代码"
 
       - name: 😴 无需更新
         if: env.UPDATE_NEEDED == 'false'
